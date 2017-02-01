@@ -56,13 +56,20 @@ typedef struct		s_env
 	void			*ptr[6];
 }					t_env;
 
+typedef struct		s_tex
+{
+	char			*name;
+	int				pnts[T_SIZE][T_SIZE];
+}					t_tex;
+
 typedef struct		s_mlx
 {
-	t_env			env;
+	t_env			tex[6];
 	void			*mlx;
 	void			*win;
 	void			*img;
 	char			*data;
+	void			*ptr[6];
 	int				bits;
 	int				size_line;
 	int				endian;
