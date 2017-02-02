@@ -20,8 +20,6 @@
 # include <mlx.h>
 # include "libft/libft.h"
 
-#include <stdio.h>
-
 # define M_HEIGHT 24
 # define M_WIDTH 24
 # define W_HEIGHT 720
@@ -44,27 +42,26 @@ typedef struct		s_intpoint
 	int				y;
 }					t_intpoint;
 
-typedef struct		s_line
+typedef struct		s_color
 {
-	int				inc;
-	float			yans;
-	float			xans;
-}					t_line;
-
-typedef struct		s_env
-{
-	void			*ptr[6];
-}					t_env;
+	char			*def;
+	int				color;
+}					t_color;
 
 typedef struct		s_tex
 {
+	t_color			*color;
 	char			*name;
+	int				height;
+	int				width;
+	unsigned int	num_color;
+	int				pix_w;
 	int				pnts[T_SIZE][T_SIZE];
 }					t_tex;
 
 typedef struct		s_mlx
 {
-	t_env			tex[6];
+	t_tex			tex[6];
 	void			*mlx;
 	void			*win;
 	void			*img;
