@@ -13,6 +13,7 @@
 #ifndef XPM_H
 # define XPM_H
 
+# include <stdio.h>
 # include <sys/types.h>
 # include <sys/stat.h>
 # include <fcntl.h>
@@ -20,27 +21,16 @@
 # include <mlx.h>
 # include "libft/libft.h"
 
-# define M_HEIGHT 24
-# define M_WIDTH 24
-# define W_HEIGHT 720
-# define W_WIDTH 1280
+# define W_HEIGHT 64
+# define W_WIDTH 1024
 # define T_SIZE 64
-# define Y_ORIGIN (W_HEIGHT / 2)
-# define X_ORIGIN (W_WIDTH / 2)
-# define CAMERA_X(x) (2 * x / (double)(W_WIDTH) - 1) //x-coordinate in camera space
-# define DELTADIST(primary, secondary) (sqrt(1 + (secondary * secondary) / (primary * primary)))
+# define NUM_FILES 16
 
 typedef struct		s_point
 {
 	double			x;
 	double			y;
 }					t_point;
-
-typedef struct		s_intpoint
-{
-	int				x;
-	int				y;
-}					t_intpoint;
 
 typedef struct		s_color
 {
@@ -61,12 +51,10 @@ typedef struct		s_tex
 
 typedef struct		s_mlx
 {
-	t_tex			tex[6];
 	void			*mlx;
 	void			*win;
 	void			*img;
 	char			*data;
-	void			*ptr[6];
 	int				bits;
 	int				size_line;
 	int				endian;

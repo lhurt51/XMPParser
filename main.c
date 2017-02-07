@@ -766,45 +766,6 @@ void			*error(char *msg)
 	return (NULL);
 }
 
-int		exit_hook(t_mlx *obj)
-{
-	free(obj);
-	exit(0);
-}
-
-int		my_key_press(int keycode, t_mlx *obj)
-{
-	if (keycode == 53)
-		exit_hook(obj);
-	return (0);
-}
-
-unsigned int	count_lines(char **str)
-{
-	unsigned int	i;
-
-	i = 0;
-	while (str[i])
-		i++;
-	return (i);
-}
-
-unsigned int	count_ord(char *av)
-{
-	int				fd;
-	char			*tmp;
-	unsigned int	count;
-
-	count = 0;
-	fd = open(av, O_RDONLY);
-	if (fd < 0)
-		return ((int)error("failed to open file"));
-	while (get_next_line(fd, &tmp))
-		count++;
-	close(fd);
-	return (count);
-}
-
 void		parse_info(t_tex *obj, char *str)
 {
 	char			**tmp;
@@ -816,9 +777,9 @@ void		parse_info(t_tex *obj, char *str)
 	obj->num_color = atoi(tmp[2]);
 	obj->pix_w = atoi(tmp[3]);
 	obj->color = (t_color*)malloc(sizeof(t_color) * obj->num_color); //make sure to free
-	i = 0;
-	while (i < obj->num_color)
-		obj->color[i++].def = ft_strnew(obj->pix_w); //make sure to free
+	i = obj->num_color;
+	while (i-- > 0)
+		obj->color[i].def = ft_strnew(obj->pix_w); //make sure to free
 	i = 0;
 	while (tmp[i])
 		ft_strdel(&tmp[i++]);
@@ -859,13 +820,10 @@ void	find_xt_color(t_tex *obj, char *str, int i)
 {
 	int in;
 
-	in = 0;
-	while (in < 753)
-	{
+	in = 753;
+	while (--in >= 0)
 		if (ft_strequ(str, def_colors[in].def))
 			obj->color[i].color = def_colors[in].color;
-		in++;
-	}
 }
 
 void	store_color(t_tex *obj, char *str, int i, int j)
@@ -877,41 +835,31 @@ void	store_color(t_tex *obj, char *str, int i, int j)
 	if (str[j] != '#' && in == 0)
 		return (find_xt_color(obj, &str[j], i));
 	while (str[j++])
-	{
 		if ((ft_isdigit(str[j]) || ft_isupper(str[j])) && in < 6)
 			tmp[in++] = str[j];
-	}
 	tmp[in] = '\0';
 	obj->color[i].color = charhextoint(tmp, ft_strlen(tmp) - 1);
 }
 
 void	parse_color(t_tex *obj, char *str, int i)
 {
-	int		color;
 	int		j;
 
-	j = 0;
-	color = 0;
-	while (j < obj->pix_w)
-	{
+	j = obj->pix_w;
+	while (--j >= 0)
 		obj->color[i].def[j] = str[j];
-		j++;
-	}
-	j += 3;
+	j = obj->pix_w + 3;
 	store_color(obj, str, i, j);
 }
 
-unsigned int	check_colors(t_tex *obj, char *str)
+int		check_colors(t_tex *obj, char *str)
 {
 	unsigned int	i;
 
-	i = 0;
-	while (i < obj->num_color)
-	{
+	i = obj->num_color;
+	while (i-- > 0)
 		if (ft_strnequ(obj->color[i].def, str, obj->pix_w))
-			return (i);
-		i++;
-	}
+			return (obj->color[i].color);
 	return (-1);
 }
 
@@ -919,7 +867,6 @@ void	fill_board(t_tex *obj, char *str, int *row)
 {
 	char *tmp;
 	int	col;
-	unsigned int	k;
 	int	i;
 
 	i = 0;
@@ -929,25 +876,22 @@ void	fill_board(t_tex *obj, char *str, int *row)
 	{
 		tmp[i % 2] = str[i];
 		if (i % 2 == 1)
-		{
-			k = check_colors(obj, tmp);
-			obj->pnts[*row][col++] = obj->color[k].color;
-		}
+			obj->pnts[*row][col++] = check_colors(obj, tmp);
 		i++;
 	}
 	ft_strdel(&tmp);
 }
 
-int		read_tex(t_tex *obj, char *av)
+int		read_xpm(t_tex *obj, char *av, unsigned int i)
 {
 	int				fd;
-	unsigned int	i;
 	int				y;
 	char			*tmp;
 
-	i = 0;
 	y = -1;
 	fd = open(av, O_RDONLY);
+	if (fd < 0)
+		return ((int)error(ft_strjoin("Can't open file", av)));
 	while (get_next_line(fd, &tmp))
 	{
 		tmp = ft_strtrim(tmp, ',');
@@ -962,72 +906,87 @@ int		read_tex(t_tex *obj, char *av)
 		i++;
 	}
 	close(fd);
+	if (obj->height != T_SIZE || obj->width != T_SIZE)
+		return ((int)error(ft_strjoin("XPM wronge size" , av)));
 	return (1);
 }
 
-void 	run_win(t_tex *texture)
+char	**file_names(void)
 {
-	t_mlx *obj;
-	int size;
-	int	x;
-	int	y;
-
-	size = 0;
-	obj = malloc(sizeof(t_mlx));
-	obj->mlx = mlx_init();
-	obj->win = mlx_new_window(obj->mlx, W_WIDTH, W_HEIGHT, "Wolf3D");
-	obj->ptr[0] = mlx_xpm_file_to_image(obj->mlx, "Brown0.XPM", &size, &size);
-	// obj->data = mlx_get_data_addr(obj->ptr[0], &obj->bits, &obj->size_line,
-	// 	&obj->endian);
-	// printf("DATA: %s\n", obj->data);
-	// printf("BITS: %d\n", obj->bits);
-	// printf("SIZE: %d\n", obj->size_line);
-	// printf("ENDIAN: %d\n", obj->endian);
-	mlx_put_image_to_window(obj->mlx, obj->win, obj->ptr[0], 0, 0);
-	obj->ptr[1] = mlx_xpm_file_to_image(obj->mlx, "BrownBlood1.XPM", &size, &size);
-	mlx_put_image_to_window(obj->mlx, obj->win, obj->ptr[1], size, 0);
-	obj->ptr[2] = mlx_xpm_file_to_image(obj->mlx, "BrownBlood2.XPM", &size, &size);
-	mlx_put_image_to_window(obj->mlx, obj->win, obj->ptr[2], size * 2, 0);
-	obj->ptr[3] = mlx_xpm_file_to_image(obj->mlx, "BrownBlood3.XPM", &size, &size);
-	mlx_put_image_to_window(obj->mlx, obj->win, obj->ptr[3], size * 3, 0);
-	obj->ptr[4] = mlx_xpm_file_to_image(obj->mlx, "BrownBlood4.XPM", &size, &size);
-	mlx_put_image_to_window(obj->mlx, obj->win, obj->ptr[4], 0, size);
-	obj->ptr[5] = mlx_xpm_file_to_image(obj->mlx, "BrownBlood5.XPM", &size, &size);
-	mlx_put_image_to_window(obj->mlx, obj->win, obj->ptr[5], size, size);
-	obj->img = mlx_new_image(obj->mlx, W_WIDTH, W_HEIGHT);
-	// obj->data = mlx_get_data_addr(obj->img, &obj->bits, &obj->size_line,
-	// 	&obj->endian);
-	// mlx_put_image_to_window(obj->mlx, obj->win, obj->img, 0, 0);
-	// mlx_mouse_hook(obj->win, my_mouse_func, obj);
-	// mlx_hook(obj->win, 6, 0, my_mouse_movement, obj);
-	y = Y_ORIGIN;
-	while (y < Y_ORIGIN + 64)
+	static char	*files[NUM_FILES + 1] =
 	{
-		x = X_ORIGIN;
-		while (x < X_ORIGIN + 64)
+		"XMP_textures/walls/Brown0.XPM",
+		"XMP_textures/walls/Brown1.XPM",
+		"XMP_textures/walls/BrownBlood0.XPM",
+		"XMP_textures/walls/BrownBlood1.XPM",
+		"XMP_textures/walls/BrownBlood2.XPM",
+		"XMP_textures/walls/BrownBlood3.XPM",
+		"XMP_textures/walls/BrownBlood4.XPM",
+		"XMP_textures/walls/BrownBlood5.XPM",
+		"XMP_textures/walls/RedBricks0.XPM",
+		"XMP_textures/walls/RedBricksMulticolored0.XPM",
+		"XMP_textures/walls/RedBricksPlanet0.XPM",
+		"XMP_textures/walls/RedBricksPlanet1.XPM",
+		"XMP_textures/walls/RedBricksSign0.XPM",
+		"XMP_textures/walls/GreenWall0.XPM",
+		"XMP_textures/walls/GreenWallWithShield0.XPM",
+		"XMP_textures/walls/StoneBounty0.XPM",
+		"NULL"
+	};
+
+	return (files);
+}
+
+void	print_xpm(t_tex *tmp, t_mlx *obj, int x, int i)
+{
+	int		y;
+	int		k;
+
+	y = 0;
+	while (y < T_SIZE)
+	{
+		k = x;
+		while (k < (T_SIZE * i))
 		{
-			// printf("Position: (%d, %d) Color: %ld\n", x - X_ORIGIN , y - Y_ORIGIN, texture->color[k].color);
-			mlx_pixel_put(obj->mlx, obj->win, x, y, texture->pnts[y - Y_ORIGIN][x - X_ORIGIN]);
-			x++;
+			mlx_pixel_put(obj->mlx, obj->win, k, y, tmp->pnts[y][k - x]);
+			k++;
 		}
 		y++;
 	}
-	mlx_hook(obj->win, 2, 0, my_key_press, obj);
-	mlx_hook(obj->win, 17, 0, exit_hook, obj);
-	mlx_loop(obj->mlx);
+}
+
+int		exit_hook(t_mlx *obj)
+{
+	free(obj);
+	exit(0);
 }
 
 int		main(void)
 {
-	t_tex *obj;
-	int ans;
+	t_tex	*tmp;
+	t_mlx	*obj;
+	char	**files;
+	int		i;
 
-	ans = 0;
-	obj = malloc(sizeof(t_tex));
-	// read_file(obj, "Brown0.XPM");
-	// ft_putendl("done w/ 1! ----------------->");
-	// printf("hex #7C7C7C: %ld\n", charhextoint("7C7C7C", 6));
-	read_tex(obj, "BrownBlood5.XPM");
-	run_win(obj);
-	return (0);
+	i = NUM_FILES;
+	tmp = malloc(sizeof(t_tex));
+	obj = malloc(sizeof(t_mlx));
+	if (!tmp || !obj)
+		return ((int)error("Malloc failed"));
+	files = file_names();
+	obj->mlx = mlx_init();
+	obj->win = mlx_new_window(obj->mlx, W_WIDTH, W_HEIGHT, "Wolf3D");
+	obj->img = mlx_new_image(obj->mlx, W_WIDTH, W_HEIGHT);
+	obj->data = mlx_get_data_addr(obj->img, &obj->bits, &obj->size_line,
+		&obj->endian);
+	while (--i >= 0)
+	{
+		if (!read_xpm(tmp, files[i], 0))
+			return (0);
+		print_xpm(tmp, obj, (T_SIZE * (i + 1)) - T_SIZE, (i + 1));
+	}
+	mlx_hook(obj->win, 17, 0, exit_hook, obj);
+	mlx_loop(obj->mlx);
+	free(tmp);
+	return (1);
 }
